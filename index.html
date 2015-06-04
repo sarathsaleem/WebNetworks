@@ -27,15 +27,15 @@
 </head>
 
 <body>
-
+    <button id="buildGraph">Build Graph</button>
     <div class="enterLink">
-        <input value="http://graphoverflow.com" type="text" id="pageLink" />
+        <input value="http://google.com" type="text" id="pageLink" />
         <button id="buildtree">Build</button>
     </div>
 
     <script>
-        var width = 960,
-            height = 500,
+        var width = 1500,
+            height = 1000,
             root = {};
 
         var force = d3.layout.force()
@@ -105,7 +105,7 @@
                     return d.y;
                 })
                 .attr("r", function (d) {
-                    return Math.sqrt(d.size) / 10 || 4.5;
+                    return d.size/10 || 4.5;
                 })
                 .style("fill", color)
                 .on("click", click)
@@ -136,7 +136,7 @@
 
          // Color leaf nodes orange, and packages white or blue.
         function color(d) {
-            return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+            return d._children ? "#18d670" : d.children ? "#08a70e" : "#e3e31f";
         }
 
          // Toggle children on click.

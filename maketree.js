@@ -5,6 +5,14 @@ $(function () {
         buildTree(link);
     });
 
+    $('#buildGraph').on('click', function () {
+            root = masterTree;
+            update();
+
+        console.log(visitedLinks)
+
+    });
+
 
 });
 
@@ -30,6 +38,10 @@ function buildTree(link) {
         .done(function (data) {
             currentLink = link;
             processResponse(data, link);
+        })
+        .fail(function (data) {
+            currentLink = link;
+            processResponse({query:{}}, link);
         });
 }
 
@@ -41,16 +53,35 @@ var visitedLinks = [];
 
 var level = 0;
 
+function rnd(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function processResponse(data, link) {
 
     var treeMap = parseLinks(data, link);
 
 
     if (level === 0) {
-        masterTree.name = link;
-        masterTree.children = treeMap.others;
 
-        visitedLinks.push(link);
+        masterTree.name = link;
+
+        var externalLinks = treeMap.others.map(function (link) {
+            return {
+                name: link,
+                ownlink: false,
+                children: []
+            };
+        });
+        var internalLinks = treeMap.same.map(function (link) {
+            return {
+                name: link,
+                ownlink: true,
+                children: []
+            };
+        });
+
+        masterTree.children = externalLinks.concat(internalLinks);
 
         buildLevelOne(masterTree.children);
 
@@ -60,37 +91,29 @@ function processResponse(data, link) {
             return node.name == currentLink;
         });
 
-        child[0].children = treeMap.others;
-        child[0].children = child[0].children.map(function (link) {
+        var externalLinks = treeMap.others.map(function (link) {
             return {
                 name: link,
-                size: 100
+                ownlink: false,
+                size: rnd(10, 100)
             };
         });
-        
+        var internalLinks = treeMap.same.map(function (link) {
+            return {
+                name: link,
+                ownlink: true,
+                size: rnd(10, 100)
+            };
+        });
 
+        child[0].children = externalLinks.concat(internalLinks);
     }
 
 
-    console.log(masterTree);
-
- 
 }
-
-setTimeout(function () {
-    root = masterTree;
-    update();
-}, 10000);
 
 function buildLevelOne() {
     level = 1;
-
-    masterTree.children = masterTree.children.map(function (link) {
-        return {
-            name: link,
-            children: []
-        };
-    });
 
     masterTree.children.forEach(function (node) {
         buildTree(node.name);
@@ -101,7 +124,9 @@ function buildLevelOne() {
 
 function parseLinks(data, link) {
 
+
     var currentHost = getAnchorProps(link).hostname;
+    visitedLinks.push(currentHost);
 
 
     var treeMap = {};
@@ -116,7 +141,7 @@ function parseLinks(data, link) {
     var anchors = data.query.results.a;
 
     anchors = anchors.map(function (link) {
-        return link.href;
+        return link.href.split('?')[0];
     });
 
     //unique
@@ -136,7 +161,6 @@ function parseLinks(data, link) {
         otherHosts = [];
 
     anchors.forEach(function (item) {
-
         if (currentHostNames.indexOf(getAnchorProps(item).hostname) > -1) {
             sameHostLinks.push(item);
         } else {
