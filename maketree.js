@@ -8,11 +8,7 @@ $(function () {
     $('#buildGraph').on('click', function () {
             root = masterTree;
             update();
-
-        console.log(visitedLinks)
-
     });
-
 
 });
 
@@ -25,7 +21,7 @@ var getAnchorProps = function (href) {
 
 var currentLink = '';
 
-function buildTree(link) {
+function buildTree(link, cb) {
 
     if (level > 10) {
         return;
@@ -38,6 +34,8 @@ function buildTree(link) {
         .done(function (data) {
             currentLink = link;
             processResponse(data, link);
+        
+            if(cb) { cb(); }
         })
         .fail(function (data) {
             currentLink = link;
@@ -47,7 +45,7 @@ function buildTree(link) {
 
 
 
-var masterTree = {};
+var masterTree = { root : true };
 
 var visitedLinks = [];
 
@@ -55,6 +53,20 @@ var level = 0;
 
 function rnd(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getByUid (ref, id) {
+
+        if(ref.uid === id ) {
+            return ref;
+        } else {
+            ref.children.forEach(function(child){
+                getByUid(child.children, id);           
+            });            
+        }
+    
+    return null;
+
 }
 
 function processResponse(data, link) {
@@ -65,25 +77,28 @@ function processResponse(data, link) {
     if (level === 0) {
 
         masterTree.name = link;
+        masterTree.uid = rnd(1, 100000);
 
         var externalLinks = treeMap.others.map(function (link) {
             return {
                 name: link,
                 ownlink: false,
-                children: []
+                children: [],
+                uid : rnd(1, 100000)
             };
         });
         var internalLinks = treeMap.same.map(function (link) {
             return {
                 name: link,
                 ownlink: true,
-                children: []
+                children: [],
+                uid : rnd(1, 100000)
             };
         });
 
         masterTree.children = externalLinks.concat(internalLinks);
 
-        buildLevelOne(masterTree.children);
+        //buildLevelOne(masterTree.children);
 
     } else if (level === 1) {
 
@@ -95,14 +110,16 @@ function processResponse(data, link) {
             return {
                 name: link,
                 ownlink: false,
-                size: rnd(10, 100)
+                size: rnd(10, 100),
+                uid : rnd(1, 100000)
             };
         });
         var internalLinks = treeMap.same.map(function (link) {
             return {
                 name: link,
                 ownlink: true,
-                size: rnd(10, 100)
+                size: rnd(10, 100),
+                uid : rnd(1, 100000)
             };
         });
 
@@ -161,6 +178,7 @@ function parseLinks(data, link) {
         otherHosts = [];
 
     anchors.forEach(function (item) {
+        console.log(currentHostNames, getAnchorProps(item).hostname)
         if (currentHostNames.indexOf(getAnchorProps(item).hostname) > -1) {
             sameHostLinks.push(item);
         } else {

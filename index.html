@@ -18,8 +18,42 @@
         }
         .link {
             fill: none;
-            stroke: #9ecae1;
+            stroke: #08A70E;
             stroke-width: 1.5px;
+        }
+        .tooltip {
+            padding: 10px;
+            color: rgb(255, 255, 255);
+            background-color: rgba(0, 0, 0, 0.419608);
+            opacity: 1;
+        }
+        
+        
+        .external {
+            background: #e3e31f;
+            padding: 10px;
+            margin: 5px;
+            color: #000;
+            width: 110px;
+        }
+        .internal {
+            background: #08a70e;
+            padding: 10px;
+            margin: 5px;
+            color: #FFF;
+            width: 110px;
+        }
+        
+        .selected {
+            padding: 10px;
+            background-color: #D0D0D0;
+            display: inline-block;
+            color: #000;
+            margin: 5px;
+        }
+        .selected  span {
+           color: #148A9E;
+           font-weight: bold;
         }
     </style>
 
@@ -29,13 +63,18 @@
 <body>
     <button id="buildGraph">Build Graph</button>
     <div class="enterLink">
-        <input value="http://google.com" type="text" id="pageLink" />
+        <input value="http://graphoverflow.com" type="text" id="pageLink" />
         <button id="buildtree">Build</button>
     </div>
+    
+    <div class="external"> External links</div>
+    <div class="internal"> internal links</div>
+    
+    <div class="selected">Selected link : <span>none</span></div>
 
     <script>
-        var width = 1500,
-            height = 1000,
+        var width = 1000,
+            height = 700,
             root = {};
 
         var force = d3.layout.force()
@@ -50,6 +89,24 @@
             node = svg.selectAll(".node");
 
 
+        // Per-type markers, as they don't inherit styles.
+        svg.append("defs").append("marker")
+            .attr("id", "marker")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 30)
+            .attr("refY", -1)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+        
+         var tooltip = d3.select('body')
+            .append("div").attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden");
+
 
 
 
@@ -59,17 +116,22 @@
             console.log(links.length)
 
 
-            links.push({source: nodes[11], target:nodes[0]});
+            /*links.push({source: nodes[11], target:nodes[0]});
             links.push({source: nodes[11], target:nodes[1]});
             links.push({source: nodes[0], target:nodes[2]});
             links.push({source: nodes[0], target:nodes[3]});
-            links.push({source: nodes[0], target:nodes[2]});
+            links.push({source: nodes[0], target:nodes[2]});*/
              console.log(links)
 
             // Restart the force layout.
-            force
+             force
                 .nodes(nodes)
-                .links(links).linkDistance(100)
+                .links(links).gravity(0.05)
+                .charge(-200)             
+                .linkDistance(150)
+                .linkStrength(0.1)
+                .size([width, height])
+                .friction(0.7)
                 .start();
 
             // Update the links…
@@ -78,18 +140,7 @@
             // Enter any new links.
             link.enter().insert("line", ".node")
                 .attr("class", "link")
-                .attr("x1", function (d) {
-                    return d.source.x;
-                })
-                .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                .attr("y2", function (d) {
-                    return d.target.y;
-                });
+                .style("marker-end", "url(#marker)")// Modified line
 
             // Update the nodes…
             node = node.data(nodes, function (d) {
@@ -108,12 +159,27 @@
                 .attr("cy", function (d) {
                     return d.y;
                 })
-                .attr("r", function (d) {
-                    return d.size/10 || 4.5;
+                .attr("r", function(d) {
+                    return d.children ? 20 : d.size / 10; 
                 })
                 .style("fill", color)
                 .on("click", click)
                 .call(force.drag);
+            
+            node.on("mouseover", function (d) {
+                var text = '';
+                text = d.name;              
+                return tooltip.style("visibility", "visible").html(text);
+            })
+            .on("mousemove", function () {
+                var offset = $('body').offset();
+                return tooltip.style("top", (event.pageY - offset.top + 30) + "px").style("left", (event.pageX - offset.left) + "px");
+            })
+            .on("mouseout", function () {
+                return tooltip.style("visibility", "hidden");
+            });
+            
+            
         }
 
         function tick() {
@@ -140,11 +206,30 @@
 
          // Color leaf nodes orange, and packages white or blue.
         function color(d) {
-            return d._children ? "#18d670" : d.children ? "#08a70e" : "#e3e31f";
+             if (d.root) {
+                return '#255ED6';
+             }
+            return d.ownlink ? "#08a70e" : "#e3e31f";
         }
 
          // Toggle children on click.
         function click(d) {
+                        
+              if(d.root) { return ;}
+            
+                $('.selected span').text(d.name);
+            
+                level = 1;
+            
+                buildTree(d.name , update);
+            
+              if (d.children) {
+                d._children = d.children;
+                d.children = null;
+              } else {
+                d.children = d._children;
+                d._children = null;
+              }
             update();
         }
 
@@ -162,6 +247,8 @@
             recurse(root);
             return nodes;
         }
+        
+
     </script>
     <script src="maketree.js"></script>
 
