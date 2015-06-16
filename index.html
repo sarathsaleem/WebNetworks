@@ -71,6 +71,7 @@
     <div class="internal"> internal links</div>
     
     <div class="selected">Selected link : <span>none</span></div>
+     <button id="buildChildtree">Build child</button>
 
     <script>
         var width = 1000,
@@ -111,6 +112,7 @@
 
 
         function update() {
+            
             var nodes = flatten(root),
                 links = d3.layout.tree().links(nodes);
             console.log(links.length)
@@ -120,8 +122,7 @@
             links.push({source: nodes[11], target:nodes[1]});
             links.push({source: nodes[0], target:nodes[2]});
             links.push({source: nodes[0], target:nodes[3]});
-            links.push({source: nodes[0], target:nodes[2]});*/
-             console.log(links)
+            links.push({source: nodes[0], target:nodes[2]});*/      
 
             // Restart the force layout.
              force
@@ -136,6 +137,8 @@
 
             // Update the links…
             link = link.data(links);
+            
+            link.exit().remove();
 
             // Enter any new links.
             link.enter().insert("line", ".node")
@@ -211,17 +214,18 @@
              }
             return d.ownlink ? "#08a70e" : "#e3e31f";
         }
+        
+        var selectedLink = '';
 
          // Toggle children on click.
         function click(d) {
                         
               if(d.root) { return ;}
             
-                $('.selected span').text(d.name);
+                selectedLink = d.name;
             
-                level = 1;
-            
-                buildTree(d.name , update);
+                $('.selected span').text(selectedLink);           
+               
             
               if (d.children) {
                 d._children = d.children;
@@ -240,7 +244,7 @@
 
             function recurse(node) {
                 if (node.children) node.children.forEach(recurse);
-                if (!node.id) node.id = ++i;
+                node.id = ++i;
                 nodes.push(node);
             }
 

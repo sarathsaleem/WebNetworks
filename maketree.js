@@ -9,6 +9,11 @@ $(function () {
             root = masterTree;
             update();
     });
+    
+    $('#buildChildtree').on('click', function () {
+        level = 1;
+        buildTree(selectedLink , update);
+    });
 
 });
 
@@ -110,7 +115,7 @@ function processResponse(data, link) {
             return {
                 name: link,
                 ownlink: false,
-                size: rnd(10, 100),
+                children: [],
                 uid : rnd(1, 100000)
             };
         });
@@ -118,7 +123,7 @@ function processResponse(data, link) {
             return {
                 name: link,
                 ownlink: true,
-                size: rnd(10, 100),
+                children: [],
                 uid : rnd(1, 100000)
             };
         });
@@ -126,15 +131,15 @@ function processResponse(data, link) {
         child[0].children = externalLinks.concat(internalLinks);
     }
 
-
+    console.log(masterTree)
 }
 
 function buildLevelOne() {
     level = 1;
 
-    masterTree.children.forEach(function (node) {
-        buildTree(node.name);
-    });
+    //masterTree.children.forEach(function (node) {
+        buildTree(masterTree.children[0].name);
+   // });
 
 }
 
